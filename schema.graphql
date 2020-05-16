@@ -1,0 +1,12 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type BasicResponse {
+  message: String!
+  statusCode: Float!
+}
+
+type Query {
+  UserGraphInfo: BasicResponse!
+}

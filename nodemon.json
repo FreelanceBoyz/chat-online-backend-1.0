@@ -1,0 +1,7 @@
+{
+    "watch": [
+      "src"
+    ],
+    "ext": "ts",
+    "exec": "NODE_ENV=dev ts-node -r tsconfig-paths/register -r dotenv/config src/main.ts"
+  }

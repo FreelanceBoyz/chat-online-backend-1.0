@@ -2,11 +2,36 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type User implements Node {
+  id: ID!
+  name: String!
+}
+
+interface Node {
+  id: ID!
+}
+
 type BasicResponse {
   message: String!
   statusCode: Float!
 }
 
+type CreateUserPayload {
+  user: User!
+  token: String!
+  refreshToken: String!
+}
+
 type Query {
   UserGraphInfo: BasicResponse!
+}
+
+type Mutation {
+  UserGraphSignUp(input: CreateUserInput!): CreateUserPayload!
+}
+
+input CreateUserInput {
+  name: String!
+  email: String!
+  password: String!
 }

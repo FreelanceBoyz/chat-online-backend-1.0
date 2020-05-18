@@ -17,5 +17,4 @@ export class User implements Node {
 
   @Field()
   name: string;
-
 }

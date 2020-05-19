@@ -7,6 +7,8 @@ import { JwtModule } from "@nestjs/jwt";
 import { EnvironmentModule } from 'Enviroment/enviroment.module';
 import { EnvironmentService } from "Enviroment/enviroment.service";
 import { EnvConstants } from 'common/constants/EnvConstants';
+import { GraphqlModule } from 'Graphql/graphql.module';
+import { GqlAuthGuard } from 'Graphql/graphql.guard';
 
 @Module({
   imports: [
@@ -14,7 +16,7 @@ import { EnvConstants } from 'common/constants/EnvConstants';
     JwtModule.registerAsync({
       imports: [EnvironmentModule],
       useFactory: async (environmentService: EnvironmentService) => ({
-        secretOrPrivateKey: environmentService.getByKey(
+        secret: environmentService.getByKey(
           EnvConstants.JWT_SECRET_KEY,
         ),
         signOptions: {
@@ -23,8 +25,9 @@ import { EnvConstants } from 'common/constants/EnvConstants';
       }),
       inject: [EnvironmentService],
     }),
+    GraphqlModule,
   ],
-  providers: [UserService, UserResolvers],
+  providers: [UserService, UserResolvers, GqlAuthGuard],
   exports: [UserService]
 })
 export class UserModule {}

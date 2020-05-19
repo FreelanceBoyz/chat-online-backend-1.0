@@ -33,6 +33,10 @@ export class UserService {
     return this.userModel.findOne(findConditions, projection).exec();
   }
 
+  public findUserById(id, projection?): Promise<User> {
+    return this.userModel.findOne({ _id: id }, projection).exec();
+  }
+
   public getAuthToken(data) {
     const dataGenToken = {...data};
     delete dataGenToken.password

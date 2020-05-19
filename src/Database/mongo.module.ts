@@ -1,11 +1,16 @@
 import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
+import { EnvironmentModule } from "Enviroment/enviroment.module";
+import { EnvironmentService } from "Enviroment/enviroment.service";
+import { EnvConstants } from "Common/constants/EnvConstants";
 
 @Module({
   imports: [
     MongooseModule.forRootAsync({
-      useFactory: () => ({
-        uri: "mongodb://localhost:27017/chat_dev",
+      imports: [EnvironmentModule],
+      inject: [EnvironmentService],
+      useFactory: (environmentService: EnvironmentService) => ({
+        uri: environmentService.getByKey(EnvConstants.MONGO_URL),
         useNewUrlParser: true,
         useCreateIndex: true,
         useFindAndModify: false,

@@ -13,11 +13,6 @@ interface Node {
   id: ID!
 }
 
-type BasicResponse {
-  message: String!
-  statusCode: Float!
-}
-
 type UserPayload {
   user: User!
   token: String!
@@ -25,7 +20,7 @@ type UserPayload {
 }
 
 type Query {
-  UserGraphInfo: BasicResponse!
+  UserGraphGetInfo: User!
 }
 
 type Mutation {

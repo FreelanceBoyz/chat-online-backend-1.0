@@ -8,8 +8,9 @@ import { UserService } from 'User/user.service';
 import { User } from 'User/models/user.models';
 import { BasicResponse } from 'common/common-models';
 import {
-  CreateUserPayload,
+  UserPayload,
   CreateUserInput,
+  SignInUserInput,
 } from 'User/graphql-types/user.graphql';
 @Resolver(() => User)
 export class UserResolvers {
@@ -25,7 +26,7 @@ export class UserResolvers {
     };
   }
 
-  @Mutation(_returns => CreateUserPayload)
+  @Mutation(_returns => UserPayload)
   async UserGraphSignUp(@Args('input') createUserData: CreateUserInput) {
     const user = await this.userService.findUserByEmail(createUserData.email, {
       _id: 1,
@@ -54,6 +55,38 @@ export class UserResolvers {
           statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         },
         HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Mutation(_returns => UserPayload)
+  async UserGraphSignIn(@Args('input') signInData: SignInUserInput) {
+    const user = await this.userService.findUserByEmail(signInData.email);
+    if (user) {
+      const isMatch = await user.comparePassword(signInData.password);
+      if (isMatch) {
+        const { token, refreshToken } = this.userService.getAuthToken(user);
+        return {
+          user,
+          token,
+          refreshToken,
+        };
+      } else {
+        throw new HttpException(
+          {
+            error: 'Password incorrect',
+            statusCode: HttpStatus.NOT_FOUND,
+          },
+          HttpStatus.NOT_FOUND,
+        );
+      }
+    } else {
+      throw new HttpException(
+        {
+          error: 'User not found',
+          statusCode: HttpStatus.NOT_FOUND,
+        },
+        HttpStatus.NOT_FOUND,
       );
     }
   }

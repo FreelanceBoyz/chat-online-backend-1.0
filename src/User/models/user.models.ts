@@ -17,4 +17,10 @@ export class User implements Node {
 
   @Field()
   name: string;
+
+  @Field()
+  email: string;
+
+  @Field()
+  phone: number;
 }

@@ -2,7 +2,7 @@ import { ObjectType, Field, InputType } from '@nestjs/graphql';
 import { User } from 'User/models/user.models';
 
 @ObjectType()
-export class CreateUserPayload {
+export class UserPayload {
   @Field((_type) => User)
   user: User;
   @Field()
@@ -15,6 +15,16 @@ export class CreateUserPayload {
 export class CreateUserInput {
   @Field()
   name: string;
+  @Field()
+  email: string;
+  @Field()
+  password: string;
+  @Field()
+  phone: number;
+}
+
+@InputType()
+export class SignInUserInput {
   @Field()
   email: string;
   @Field()

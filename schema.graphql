@@ -5,6 +5,8 @@
 type User implements Node {
   id: ID!
   name: String!
+  email: String!
+  phone: Float!
 }
 
 interface Node {
@@ -16,7 +18,7 @@ type BasicResponse {
   statusCode: Float!
 }
 
-type CreateUserPayload {
+type UserPayload {
   user: User!
   token: String!
   refreshToken: String!
@@ -27,11 +29,18 @@ type Query {
 }
 
 type Mutation {
-  UserGraphSignUp(input: CreateUserInput!): CreateUserPayload!
+  UserGraphSignUp(input: CreateUserInput!): UserPayload!
+  UserGraphSignIn(input: SignInUserInput!): UserPayload!
 }
 
 input CreateUserInput {
   name: String!
+  email: String!
+  password: String!
+  phone: Float!
+}
+
+input SignInUserInput {
   email: String!
   password: String!
 }

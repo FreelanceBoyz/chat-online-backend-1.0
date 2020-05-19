@@ -21,6 +21,7 @@ type UserPayload {
 
 type Query {
   UserGraphGetInfo: User!
+  UserGraphVerifyToken: UserPayload!
 }
 
 type Mutation {

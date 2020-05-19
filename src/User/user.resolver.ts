@@ -38,6 +38,19 @@ export class UserResolvers {
     }
   }
 
+  @UseGuards(GqlAuthGuard)
+  @Query(_returns => UserPayload)
+  async UserGraphVerifyToken(@Context() context) {
+    const { user: { _id } } = context.req;
+    const userInfo = await this.userService.findUserById(_id);
+    const { token, refreshToken } = this.userService.getAuthToken({ _id });
+    return {
+      user: userInfo,
+      token,
+      refreshToken,
+    };
+  }
+
   @Mutation(_returns => UserPayload)
   async UserGraphSignUp(@Args('input') createUserData: CreateUserInput) {
     const user = await this.userService.findUserByEmail(createUserData.email, {

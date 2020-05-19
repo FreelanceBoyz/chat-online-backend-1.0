@@ -37,8 +37,7 @@ import {
         );
       }
       try {
-        const decoded = this.jwtService.verify(tokenParams.value);
-        console.log("GqlAuthGuard -> canActivate -> decoded", decoded)
+        const decoded = this.jwtService.verify(refreshTokenParams.value);
         request.user = decoded;
         return true;
       } catch (e) {

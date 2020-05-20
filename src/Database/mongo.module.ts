@@ -2,7 +2,7 @@ import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
 import { EnvironmentModule } from "Enviroment/enviroment.module";
 import { EnvironmentService } from "Enviroment/enviroment.service";
-import { EnvConstants } from "Common/constants/EnvConstants";
+import { EnvConstants } from "common/constants/EnvConstants";
 
 @Module({
   imports: [

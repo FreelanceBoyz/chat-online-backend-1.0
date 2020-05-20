@@ -20,7 +20,7 @@ export class CreateUserInput {
   @Field()
   password: string;
   @Field()
-  phone: number;
+  phone: string;
 }
 
 @InputType()

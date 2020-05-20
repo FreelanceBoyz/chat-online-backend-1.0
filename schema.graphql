@@ -6,7 +6,7 @@ type User implements Node {
   id: ID!
   name: String!
   email: String!
-  phone: Float!
+  phone: String!
 }
 
 interface Node {
@@ -33,7 +33,7 @@ input CreateUserInput {
   name: String!
   email: String!
   password: String!
-  phone: Float!
+  phone: String!
 }
 
 input SignInUserInput {

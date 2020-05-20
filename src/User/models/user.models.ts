@@ -22,5 +22,5 @@ export class User implements Node {
   email: string;
 
   @Field()
-  phone: number;
+  phone: string;
 }

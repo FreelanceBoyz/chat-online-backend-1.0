@@ -9,6 +9,7 @@ import { EnvConstants } from 'common/constants/EnvConstants';
   imports: [
     GraphQLModule.forRoot({
       autoSchemaFile: 'schema.graphql',
+      installSubscriptionHandlers: true,
     }),
     JwtModule.registerAsync({
       imports: [EnvironmentModule],

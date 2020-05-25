@@ -19,9 +19,30 @@ type UserPayload {
   refreshToken: String!
 }
 
+type Room implements Node {
+  id: ID!
+}
+
+type Chat implements Node {
+  id: ID!
+  message: String!
+  ownerName: String!
+  roomId: String!
+}
+
+type BasicResponse {
+  message: String!
+  statusCode: Float!
+}
+
 type Query {
   UserGraphGetInfo: User!
   UserGraphVerifyToken: UserPayload!
+  RoomGraphGetAllUserInRoom(input: RoomInput!): BasicResponse!
+}
+
+input RoomInput {
+  roomId: String!
 }
 
 type Mutation {

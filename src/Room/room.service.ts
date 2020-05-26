@@ -11,11 +11,19 @@ export class RoomService {
   ) {}
 
   public async getAllUserPermissionWithRoomId(roomId) {
-    return this.roomPermissionModel.find({ roomId });
+    return this.roomPermissionModel.findAll({ roomId });
+  }
+
+  public async getRoomById(_id) {
+    return this.roomModel.findOne({ _id });
   }
   
   public async findUserPermissionInRoom(roomId, refId) {
     return this.roomPermissionModel.findOne({ roomId, refId });
+  }
+
+  public async getAllRoomOfUser(refId, projection?) {
+    return this.roomPermissionModel.findAll({ refId }, projection);
   }
 
   public async createRoom(room) {

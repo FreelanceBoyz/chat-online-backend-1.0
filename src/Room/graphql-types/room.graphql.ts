@@ -5,7 +5,9 @@ import { Chat } from 'Room/models/chat.models';
 @ObjectType()
 export class RoomPayload {
   @Field((_type) => Room)
-  user: Room;
+  room: Room;
+  @Field()
+  statusCode: number;
 }
 
 @InputType()

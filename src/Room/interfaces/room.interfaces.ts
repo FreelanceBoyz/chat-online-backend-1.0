@@ -4,14 +4,8 @@ import { Document } from "mongoose";
 export interface Room extends Document {
   _id: ObjectId;
   title: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface RoomPermission extends Document {
-  _id: ObjectId;
-  roomId: ObjectId;
-  refId: ObjectId;
+  joinedUsers: [string];
+  messages: [string];
   createdAt: Date;
   updatedAt: Date;
 }

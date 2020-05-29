@@ -51,6 +51,17 @@ export class UserService {
     return { token, refreshToken }
   }
 
+  public async updateRoomsOfUser(_id, newRooms) {
+    return this.userModel.updateOne(
+      { _id },
+      {
+        $set: {
+          rooms: newRooms,
+        },
+      },
+    )
+  }
+
   findAll(): string {
     // const parsedUserId = Relay.fromGlobalId(where.id);
     // if (!isUUID(parsedUserId.id)) {

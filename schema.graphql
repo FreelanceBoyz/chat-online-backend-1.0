@@ -21,6 +21,10 @@ type UserPayload {
 
 type Room implements Node {
   id: ID!
+  _id: ID!
+  title: String!
+  users: [User!]!
+  lastMessage: String!
 }
 
 type Chat implements Node {
@@ -35,19 +39,34 @@ type BasicResponse {
   statusCode: Float!
 }
 
+type PageInfo {
+  hasNextPage: Boolean
+  hasPreviousPage: Boolean
+  startCursor: String
+  endCursor: String
+}
+
+type RoomsConnection {
+  pageInfo: PageInfo!
+  edges: [RoomEdge!]!
+  statusCode: Float!
+}
+
+type RoomEdge {
+  node: Room!
+  cursor: String!
+}
+
 type Query {
   UserGraphGetInfo: User!
   UserGraphVerifyToken: UserPayload!
-  RoomGraphGetAllUserInRoom(input: RoomInput!): BasicResponse!
-}
-
-input RoomInput {
-  roomId: String!
+  RoomGraphGetAllRoom(cursor: String!, count: Float!): RoomsConnection!
 }
 
 type Mutation {
   UserGraphSignUp(input: CreateUserInput!): UserPayload!
   UserGraphSignIn(input: SignInUserInput!): UserPayload!
+  RoomGraphCreateRoom(email: String!): BasicResponse!
 }
 
 input CreateUserInput {

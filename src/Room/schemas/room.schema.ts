@@ -2,6 +2,8 @@ import * as mongoose from "mongoose";
 
 const RoomSchema = new mongoose.Schema({
   title: String,
+  joinedUsers: [mongoose.Schema.Types.ObjectId],
+  messages: [String],
   createdAt: {
     type: Date,
     default: Date.now,

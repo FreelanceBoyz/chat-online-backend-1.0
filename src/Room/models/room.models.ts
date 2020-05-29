@@ -7,7 +7,7 @@ import { User } from 'User/models/user.models';
 export class Room implements Node {
   readonly id: string;
 
-  @Field((_type) => ID, { name: 'id' })
+  @Field((_type) => ID, { name: '_id' })
   get relayId(): string {
     return toGlobalId('Room', this.id);
   }
@@ -19,9 +19,10 @@ export class Room implements Node {
   @Field()
   title: string;
 
-  @Field()
+  @Field((_type) => [User])
   users: [User]
 
   @Field()
-  role: string;
+  lastMessage: string
 }
+

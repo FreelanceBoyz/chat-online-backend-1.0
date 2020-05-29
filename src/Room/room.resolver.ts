@@ -3,133 +3,111 @@ import { Query, Resolver, Mutation, Args, Context } from '@nestjs/graphql';
 
 import { RoomService } from 'Room/room.service';
 import { Room } from 'Room/models/room.models';
-import { RoomPayload, RoomInput } from 'Room/graphql-types/room.graphql';
+import { RoomsConnection } from 'Room/graphql-types/room.graphql';
 import { BasicResponse } from 'common/common-models';
 import { GqlAuthGuard } from 'Graphql/graphql.guard';
 import { UserService } from 'User/user.service';
+import { Types } from 'mongoose';
 
 @Resolver(() => Room)
 export class RoomResolvers {
   constructor(private readonly roomService: RoomService, private readonly userService: UserService) {}
 
   @UseGuards(GqlAuthGuard)
-  @Query(_returns => BasicResponse)
-  async RoomGraphGetAllUserInRoom(@Context() context, @Args('input') roomData: RoomInput) {
+  @Query(_returns => RoomsConnection)
+  async RoomGraphGetAllRoom(@Context() context, @Args('count') count: number, @Args('cursor') cursor: string ) {
     try {
-      const {
-        user: { _id },
-      } = context.req;
-      const { roomId } = roomData;
-      const userPermission = await this.roomService.findUserPermissionInRoom(roomId, _id);
-      if (userPermission) {
-        const userPermissions = await this.roomService.getAllUserPermissionWithRoomId(roomId);
+      const { user: { _id } } = context.req;
+      const currentUser = await this.userService.findUserById(_id, { rooms: 1 });
+      let rooms = currentUser.rooms as [any];
+      let indexOfRoom = -1;
+      if (cursor) {
+        const cursorRoom = rooms.find((room) => room.toHexString() === cursor);
+        indexOfRoom  = rooms.indexOf(cursorRoom);
+      }
+      rooms = rooms.slice(indexOfRoom + 1, indexOfRoom + 1 + count) as [any];
+
+      const roomsData = await Promise.all(rooms.map((roomId) => this.roomService.findRoomById(roomId)));
+      const edges = (await Promise.all(roomsData.map(async (room) => {
+        const lastMessage = '';
+        if (room.messages?.length) {
+          const lastMessageId = room.messages[room.messages.length - 1];
+          //waitng for message implement
+        }
+
+        const usersData = await Promise.all(room.joinedUsers.map(async (userId) => this.userService.findUserById(userId, {
+          name: 1,
+          email: 1,
+          phone: 1,
+        })));
+
         return {
-          message: 'success',
+          node: {
+            id: Types.ObjectId(room._id),
+            title: room.title,
+            users: usersData,
+            lastMessage,
+          },
+          cursor: room._id,
+        };
+      })));
+
+      const startCursor = edges.length >= 1 ? edges[0].cursor : '';
+      const endCursor = edges.length >= 1 ? edges[edges.length - 1].cursor : '';
+
+      return {
+        pageInfo: {hasPreviousPage: false, hasNextPage: false, startCursor, endCursor},
+        edges,
+        statusCode: 200,
+      };
+
+    } catch (e) {
+      console.log(e);
+      throw new HttpException(
+        {
+          error: 'Some thing went wrong',
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @UseGuards(GqlAuthGuard)
+  @Mutation(_returns => BasicResponse)
+  async RoomGraphCreateRoom(@Context() context,  @Args('email') email: string) {
+    try {
+      const { user: { _id } } = context.req;
+      const currentUser = await this.userService.findUserById(_id, { rooms: 1 });
+      const addedUser = await this.userService.findUserByEmail(email, { rooms: 1 });
+      const roomsExits = await this.roomService.findRoomWithJoinedUsers([_id, addedUser._id], { _id: 1 });
+      if (roomsExits?.length) {
+        throw new Error("Alredy connected");
+      }
+      if (addedUser) {
+        const joinedUsers = [_id, addedUser._id];
+        const newRoom = await this.roomService.createRoom({
+          joinedUsers,
+          title: 'none',
+          messages: [],
+        });
+        await this.userService.updateRoomsOfUser(_id, [...currentUser.rooms, newRoom._id]);
+        await this.userService.updateRoomsOfUser(addedUser._id, [...addedUser.rooms, newRoom._id]);
+        return {
+          message: 'create room success',
           statusCode: 200,
         }
       } else {
-        return {
-          message: 'error',
-          statusCode: 403,
-        }
+        throw new Error("User not found")
       }
     } catch (e) {
+      console.log(e);
       throw new HttpException(
         {
           error: 'Some thing went wrong',
           statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         },
         HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-  }
-
-  @UseGuards(GqlAuthGuard)
-  @Query(_returns => [RoomPayload])
-  async RoomGraphGetAllRoom(@Context() context) {
-    try {
-      const {
-        user: { _id },
-      } = context.req;
-
-      const roomsPermission = await this.roomService.getAllRoomOfUser(_id, { roomId: 1, role: 1, _id: -1});
-      const allRoomsData = await Promise.all(roomsPermission.map( async (permission) => {
-        const subRoomsPermission = await this.roomService.getAllUserPermissionWithRoomId(permission.roomId);
-        const fileterRoomsPermission = subRoomsPermission.filter((el) => el.refId !== _id);
-        const room = await this.roomService.getRoomById(permission.roomId);
-        const userDatas = await Promise.all(fileterRoomsPermission.map(async (roomPermission) => {
-          const user = await this.userService.findUserById(roomPermission.refId, { email: 1, name: 1 });
-          return user;
-        }));
-        return {
-          room: {
-            title: room.title,
-            users: [userDatas],
-            role: permission.role,
-          },
-          statusCode: 200,
-        }
-      }))
-
-      return allRoomsData;
-    } catch(e) {
-      throw new HttpException(
-        {
-          error: 'Some thing went wrong',
-          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-  }
-
-  @UseGuards(GqlAuthGuard)
-  @Mutation(_returns => RoomPayload)
-  async RoomGraphCreateConnection(@Context() context, @Args('mail') userMail: string) {
-    try {
-      const {
-        user: { _id },
-      } = context.req;
-
-      const connectedUser = await this.userService.findUserByEmail(userMail, {
-        email: 1,
-        name: 1,
-      });
-
-      if (connectedUser) {
-        const newRoom = await this.roomService.createRoom({ title: "" });
-        const ownerRoomPermission = {
-          roomId: newRoom._id,
-          refId: _id,
-          role: 'owner',
-        };
-        const connectedRoomPermission = {
-          roomId: newRoom._id,
-          refId: connectedUser._id,
-          role: 'client',
-        }
-
-        await this.roomService.createRoomPermission(ownerRoomPermission);
-        await this.roomService.createRoomPermission(connectedRoomPermission);
-
-        return {
-          room: {
-            title: newRoom.title,
-            users: [connectedUser],
-            role: 'owner',
-          },
-          statusCode: 200,
-        }
-      } else {
-        throw new Error("User not found");
-      }
-    } catch(e) {
-        throw new HttpException(
-          {
-            error: 'Some thing went wrong',
-            statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-          },
-          HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }

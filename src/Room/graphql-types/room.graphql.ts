@@ -1,6 +1,29 @@
 import { ObjectType, Field, InputType } from '@nestjs/graphql';
+import * as Relay from 'graphql-relay';
 import { Room } from 'Room/models/room.models';
 import { Chat } from 'Room/models/chat.models';
+import { PageInfo } from 'common/common-models';
+
+@ObjectType({isAbstract: true})
+abstract class RoomEdge implements Relay.Edge<Room> {
+  @Field(() => Room)
+  readonly node!: Room;
+
+  @Field((_type) => String)
+  readonly cursor!: Relay.ConnectionCursor;
+}
+@ObjectType()
+export class RoomsConnection implements Relay.Connection<Room> {
+  @Field()
+  readonly pageInfo!: PageInfo;
+
+  @Field(() => [RoomEdge])
+  readonly edges!: Relay.Edge<Room>[];
+
+  @Field()
+  statusCode: number;
+}
+
 
 @ObjectType()
 export class RoomPayload {

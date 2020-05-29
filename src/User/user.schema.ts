@@ -7,6 +7,7 @@ const UserSchema = new mongoose.Schema({
   password: String,
   name: String,
   phone: String,
+  rooms: [mongoose.Schema.Types.ObjectId],
   createdAt: {
     type: Date,
     default: Date.now,

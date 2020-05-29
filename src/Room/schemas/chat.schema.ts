@@ -3,7 +3,6 @@ import * as mongoose from "mongoose";
 const ChatSchema = new mongoose.Schema({
   message: String,
   ownerId: mongoose.Schema.Types.ObjectId,
-  room: mongoose.Schema.Types.ObjectId,
   createdAt: {
     type: Date,
     default: Date.now,

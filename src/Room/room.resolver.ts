@@ -76,39 +76,40 @@ export class RoomResolvers {
   @UseGuards(GqlAuthGuard)
   @Mutation(_returns => BasicResponse)
   async RoomGraphCreateRoom(@Context() context,  @Args('email') email: string) {
-    try {
-      const { user: { _id } } = context.req;
-      const currentUser = await this.userService.findUserById(_id, { rooms: 1 });
-      const addedUser = await this.userService.findUserByEmail(email, { rooms: 1 });
+    const { user: { _id } } = context.req;
+    const currentUser = await this.userService.findUserById(_id, { rooms: 1 });
+    const addedUser = await this.userService.findUserByEmail(email, { rooms: 1 });
+    if (addedUser) {
+      if (_id.toString() === addedUser._id.toString()) {
+        throw new HttpException({
+          error: "Can't connect with your self",
+          statusCode: HttpStatus.BAD_REQUEST
+        }, HttpStatus.BAD_REQUEST);
+      }
       const roomsExits = await this.roomService.findRoomWithJoinedUsers([_id, addedUser._id], { _id: 1 });
       if (roomsExits?.length) {
-        throw new Error("Alredy connected");
+        throw new HttpException({
+          error: "Already connected",
+          statusCode: HttpStatus.BAD_REQUEST
+        }, HttpStatus.BAD_REQUEST);
       }
-      if (addedUser) {
-        const joinedUsers = [_id, addedUser._id];
-        const newRoom = await this.roomService.createRoom({
-          joinedUsers,
-          title: 'none',
-          messages: [],
-        });
-        await this.userService.updateRoomsOfUser(_id, [...currentUser.rooms, newRoom._id]);
-        await this.userService.updateRoomsOfUser(addedUser._id, [...addedUser.rooms, newRoom._id]);
-        return {
-          message: 'create room success',
-          statusCode: 200,
-        }
-      } else {
-        throw new Error("User not found")
+      const joinedUsers = [_id, addedUser._id];
+      const newRoom = await this.roomService.createRoom({
+        joinedUsers,
+        title: 'none',
+        messages: [],
+      });
+      await this.userService.updateRoomsOfUser(_id, [...currentUser.rooms, newRoom._id]);
+      await this.userService.updateRoomsOfUser(addedUser._id, [...addedUser.rooms, newRoom._id]);
+      return {
+        message: 'create room success',
+        statusCode: 200,
       }
-    } catch (e) {
-      console.log(e);
-      throw new HttpException(
-        {
-          error: 'Some thing went wrong',
-          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+    } else {
+      throw new HttpException({
+        error: "User not found",
+        statusCode: HttpStatus.BAD_REQUEST
+      }, HttpStatus.BAD_REQUEST);
     }
   }
 }

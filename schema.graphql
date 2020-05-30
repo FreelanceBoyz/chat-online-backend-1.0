@@ -3,14 +3,14 @@
 # ------------------------------------------------------
 
 type User implements Node {
-  id: ID!
+  _id: String!
   name: String!
   email: String!
   phone: String!
 }
 
 interface Node {
-  id: ID!
+  _id: String!
 }
 
 type UserPayload {
@@ -20,15 +20,14 @@ type UserPayload {
 }
 
 type Room implements Node {
-  id: ID!
-  _id: ID!
+  _id: String!
   title: String!
   users: [User!]!
   lastMessage: String!
 }
 
 type Chat implements Node {
-  id: ID!
+  _id: String!
   message: String!
   ownerName: String!
   roomId: String!
@@ -60,7 +59,7 @@ type RoomEdge {
 type Query {
   UserGraphGetInfo: User!
   UserGraphVerifyToken: UserPayload!
-  RoomGraphGetAllRoom(cursor: String!, count: Float!): RoomsConnection!
+  RoomGraphGetAllRoom(after: String!, first: Float!): RoomsConnection!
 }
 
 type Mutation {

@@ -5,16 +5,13 @@ import { User } from 'User/models/user.models';
 
 @ObjectType({ implements: Node })
 export class Room implements Node {
-  readonly id: string;
-
-  @Field((_type) => ID, { name: '_id' })
-  get relayId(): string {
-    return toGlobalId('Room', this.id);
-  }
 
   readonly createdAt: Date;
 
   readonly updatedAt: Date;
+
+  @Field()
+  _id: string;
 
   @Field()
   title: string;

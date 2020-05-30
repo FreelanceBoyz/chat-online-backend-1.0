@@ -15,7 +15,7 @@ export class RoomResolvers {
 
   @UseGuards(GqlAuthGuard)
   @Query(_returns => RoomsConnection)
-  async RoomGraphGetAllRoom(@Context() context, @Args('count') count: number, @Args('cursor') cursor: string ) {
+  async RoomGraphGetAllRoom(@Context() context, @Args('first') count: number, @Args('after') cursor: string ) {
     try {
       const { user: { _id } } = context.req;
       const currentUser = await this.userService.findUserById(_id, { rooms: 1 });
@@ -26,8 +26,8 @@ export class RoomResolvers {
         indexOfRoom  = rooms.indexOf(cursorRoom);
       }
       rooms = rooms.slice(indexOfRoom + 1, indexOfRoom + 1 + count) as [any];
-
-      const roomsData = await Promise.all(rooms.map((roomId) => this.roomService.findRoomById(roomId)));
+      
+      const roomsData = await Promise.all(rooms.map((roomId) => this.roomService.findRoomById(roomId.toHexString())));
       const edges = (await Promise.all(roomsData.map(async (room) => {
         const lastMessage = '';
         if (room.messages?.length) {
@@ -43,7 +43,7 @@ export class RoomResolvers {
 
         return {
           node: {
-            id: Types.ObjectId(room._id),
+            _id: Types.ObjectId(room._id),
             title: room.title,
             users: usersData,
             lastMessage,

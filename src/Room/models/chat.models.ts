@@ -4,13 +4,9 @@ import { Node } from 'Node/models/node.models';
 
 @ObjectType({ implements: Node })
 export class Chat implements Node {
-  readonly id: string;
-
-  @Field((_type) => ID, { name: 'id' })
-  get relayId(): string {
-    return toGlobalId('Chat', this.id);
-  }
-
+  @Field()
+  _id: string;
+  
   readonly createdAt: Date;
 
   readonly updatedAt: Date;

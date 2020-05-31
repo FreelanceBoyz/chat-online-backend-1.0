@@ -13,7 +13,6 @@ export interface Room extends Document {
 export interface Chat extends Document {
   _id: ObjectId;
   ownerId: ObjectId;
-  room: ObjectId;
   message: string;
   createdAt: Date;
   updatedAt: Date;

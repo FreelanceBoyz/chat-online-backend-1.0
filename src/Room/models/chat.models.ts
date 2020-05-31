@@ -19,7 +19,4 @@ export class Chat implements Node {
 
   @Field()
   ownerName: string;
-
-  @Field()
-  roomId: string;
 }

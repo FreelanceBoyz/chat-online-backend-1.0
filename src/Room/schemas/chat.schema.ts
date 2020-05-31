@@ -13,6 +13,4 @@ const ChatSchema = new mongoose.Schema({
   },
 });
 
-ChatSchema.index({ room: 1 });
-
 export { ChatSchema };

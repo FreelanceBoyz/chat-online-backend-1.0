@@ -1,13 +1,17 @@
-import { HttpException, HttpStatus, UseGuards } from '@nestjs/common';
-import { Query, Resolver, Mutation, Args, Context, ResolveField, Parent } from '@nestjs/graphql';
+import { HttpException, HttpStatus, UseGuards, } from '@nestjs/common';
+import { Query, Resolver, Mutation, Args, Context, ResolveField, Parent, Subscription } from '@nestjs/graphql';
 import { PubSub } from 'graphql-subscriptions';
 import { toGlobalId } from 'graphql-relay';
 import { RoomService } from 'Room/room.service';
 import { Room } from 'Room/models/room.models';
+import { Chat } from 'Room/models/chat.models';
 import { CreatedConnectionPayload, RoomList, RoomsConnection } from 'Room/graphql-types/room.graphql';
 import { GqlAuthGuard } from 'Graphql/graphql.guard';
 import { UserService } from 'User/user.service';
 import { Types } from 'mongoose';
+import { BasicResponse } from 'common/common-models';
+
+const pubSub = new PubSub();
 
 @Resolver(() => RoomList)
 export class RoomListResolvers {
@@ -17,14 +21,15 @@ export class RoomListResolvers {
   async allRooms(@Parent() myRoomList: RoomList, @Args('first') count: number, @Args('after') cursor: string ) {
     try {
       let indexOfRoom = -1;
-      let { roomsConection } = myRoomList;
-      if (cursor) {
-        const cursorRoom = roomsConection.find((room) => room === cursor);
-        indexOfRoom  = roomsConection.indexOf(cursorRoom);
-      }
-      roomsConection = roomsConection.slice(indexOfRoom + 1, indexOfRoom + 1 + count) as [any];
+      const { roomsConection } = myRoomList;
       const roomsData = await Promise.all(roomsConection.map((roomId) => this.roomService.findRoomById(roomId)));
-      const edges = (await Promise.all(roomsData.map(async (room) => {
+      roomsData.sort((room1, room2) => room1.updatedAt - room2.updatedAt);
+      if (cursor) {
+        const cursorRoom = roomsData.find((room) => room._id.toString() === cursor);
+        indexOfRoom  = roomsData.indexOf(cursorRoom);
+      }
+      const roomsDataPaging = roomsData.slice(indexOfRoom + 1, indexOfRoom + 1 + count) as [any];
+      const edges = (await Promise.all(roomsDataPaging.map(async (room) => {
         const lastMessage = '';
         if (room.messages?.length) {
           const lastMessageId = room.messages[room.messages.length - 1];
@@ -52,8 +57,9 @@ export class RoomListResolvers {
       const startCursor = edges.length >= 1 ? edges[0].cursor : '';
       const endCursor = edges.length >= 1 ? edges[edges.length - 1].cursor : '';
 
+      const hasNextPage = roomsData.length && roomsDataPaging.length && roomsData[roomsData.length - 1]._id !== roomsDataPaging[roomsDataPaging.length - 1]._id;
       return {
-        pageInfo: {hasPreviousPage: false, hasNextPage: false, startCursor, endCursor},
+        pageInfo: {hasPreviousPage: false, hasNextPage , startCursor, endCursor},
         edges,
         statusCode: 200,
       };
@@ -72,6 +78,11 @@ export class RoomListResolvers {
 @Resolver(() => Room)
 export class RoomResolvers {
   constructor(private readonly roomService: RoomService, private readonly userService: UserService) {}
+
+  @Subscription(_returns => Chat, { name: 'chatAdded', filter: (payload, variables) => payload.chatAdded.receiverId === variables.id })
+  addNewChatHandler() {
+    return pubSub.asyncIterator('chatAdded');
+  }
 
   @UseGuards(GqlAuthGuard)
   @Query(_returns => RoomList)
@@ -146,5 +157,39 @@ export class RoomResolvers {
         statusCode: HttpStatus.BAD_REQUEST
       }, HttpStatus.BAD_REQUEST);
     }
+  }
+
+  @UseGuards(GqlAuthGuard)
+  @Mutation(_returns => BasicResponse)
+  async RoomGraphAddNewChat(@Context() context,  @Args('message') message: string, @Args('roomId') roomId: string) {
+    try {
+      const { user: { _id } } = context.req;
+      const currentUser = await this.userService.findUserById(_id);
+      const room = await this.roomService.findRoomById(roomId);
+      const joinedUsers = room.joinedUsers.filter(id => id.toString() !== _id.toString());
+      const newMessage = await this.roomService.addMessage({
+        message,
+        ownerId: _id,
+      });
+      await this.roomService.updateMessagesInRoom(roomId, [...room.messages, newMessage._id]);
+      joinedUsers.forEach((id) => pubSub.publish('chatAdded', { chatAdded: {
+        message,
+        ownerName: currentUser.name,
+        receiverId: id,
+      }}));
+      return {
+        message: 'success add message',
+        statusCode: 200,
+      }
+    } catch(e) {
+      console.log(e);
+      throw new HttpException(
+        {
+          error: 'Some thing went wrong',
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    } 
   }
 }

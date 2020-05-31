@@ -10,6 +10,14 @@ import { EnvConstants } from 'common/constants/EnvConstants';
     GraphQLModule.forRoot({
       autoSchemaFile: 'schema.graphql',
       installSubscriptionHandlers: true,
+      formatError: (err) => {
+        return {
+          message: err.extensions.exception.response.error,
+          locations: null,
+          path: null,
+          extensions: null
+        }
+      }
     }),
     JwtModule.registerAsync({
       imports: [EnvironmentModule],

@@ -3,7 +3,7 @@ import { User } from 'User/models/user.models';
 
 @ObjectType()
 export class UserPayload {
-  @Field((_type) => User)
+  @Field(() => User)
   user: User;
   @Field()
   token: string;
@@ -29,4 +29,12 @@ export class SignInUserInput {
   email: string;
   @Field()
   password: string;
+}
+
+@InputType()
+export class GoogleSigninInput {
+  @Field()
+  email: string;
+  @Field()
+  name: string;
 }

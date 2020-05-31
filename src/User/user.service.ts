@@ -1,3 +1,4 @@
+import { EmailVerifyTokenService } from 'EmailVerifyToken/emailverifytoken.service';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from "@nestjs/mongoose";
 import { JwtService } from '@nestjs/jwt';
@@ -7,6 +8,7 @@ import * as Relay from 'graphql-relay';
 import { User } from "User/interfaces/user.interfaces";
 import { EnvironmentService } from 'Enviroment/enviroment.service';
 import { EnvConstants } from 'common/constants/EnvConstants';
+
 @Injectable()
 export class UserService {
   constructor(
@@ -17,7 +19,9 @@ export class UserService {
 
   public async createUser(newUser): Promise<User> {
     try {
-      newUser.password = await Utils.hashPassword(newUser.password);
+      if (newUser.password) {
+        newUser.password = await Utils.hashPassword(newUser.password);
+      }
       const createdUser = await this.userModel.create(newUser);
       return createdUser;
     } catch (err) {
@@ -61,6 +65,9 @@ export class UserService {
       },
     )
   }
+  public async updateVerifyMail(id: string, isVerified: boolean): Promise<User> {
+    return await this.userModel.findByIdAndUpdate(id, {isVerified: isVerified});
+  } 
 
   findAll(): string {
     // const parsedUserId = Relay.fromGlobalId(where.id);

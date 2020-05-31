@@ -15,11 +15,14 @@ export class User implements Node {
   relayId: string
 
   @Field()
+  isVerified: boolean;
+
+  @Field()
   name: string;
 
   @Field()
   email: string;
 
-  @Field()
+  @Field({nullable: true})
   phone: string;
 }

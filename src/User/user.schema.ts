@@ -8,6 +8,10 @@ const UserSchema = new mongoose.Schema({
   name: String,
   phone: String,
   rooms: [mongoose.Schema.Types.ObjectId],
+  isVerified: {
+    type: Boolean,
+    default: false
+  },
   createdAt: {
     type: Date,
     default: Date.now,

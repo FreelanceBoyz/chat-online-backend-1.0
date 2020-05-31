@@ -1,3 +1,4 @@
+import { EmailVerifyTokenModule } from 'EmailVerifyToken/emailverifytoken.module';
 import { Module } from '@nestjs/common';
 import { MongooseModule } from "@nestjs/mongoose";
 import { UserSchema } from "User/user.schema";
@@ -26,6 +27,7 @@ import { GqlAuthGuard } from 'Graphql/graphql.guard';
       inject: [EnvironmentService],
     }),
     GraphqlModule,
+    EmailVerifyTokenModule
   ],
   providers: [UserService, UserResolvers, GqlAuthGuard],
   exports: [UserService]

@@ -7,6 +7,8 @@ export interface User extends Document {
   password: string;
   name: string;
   rooms: [ObjectId]
+  phone: string;
+  isVerified: boolean;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;

@@ -4,4 +4,7 @@ import { InterfaceType, Field, ID } from '@nestjs/graphql';
 export abstract class Node {
   @Field()
   _id: string;
+
+  @Field({ name: 'id'})
+  relayId: string
 }

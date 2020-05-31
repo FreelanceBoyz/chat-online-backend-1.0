@@ -11,6 +11,9 @@ export class Chat implements Node {
 
   readonly updatedAt: Date;
 
+  @Field({ name: 'id'})
+  relayId: string
+
   @Field()
   message: string;
 

@@ -2,7 +2,7 @@ import { ObjectType, Field, InputType, Args, ResolveField } from '@nestjs/graphq
 import * as Relay from 'graphql-relay';
 import { Room } from 'Room/models/room.models';
 import { Chat } from 'Room/models/chat.models';
-import { PageInfo } from 'common/common-models';
+import { PageInfo, BasicResponse } from 'common/common-models';
 
 @ObjectType({isAbstract: true})
 abstract class RoomEdge implements Relay.Edge<Room> {
@@ -22,6 +22,24 @@ export class RoomsConnection implements Relay.Connection<Room> {
 
   @Field()
   statusCode: number;
+}
+
+@ObjectType()
+export class RoomList {
+  @Field((_type) => [String])
+  roomsConection: [string]
+
+  @Field((_type) => RoomsConnection, { name: "allRooms" })
+  allRooms: RoomsConnection
+}
+
+@ObjectType()
+export class CreatedConnectionPayload {
+  @Field((_type) => BasicResponse)
+  basicResponse: BasicResponse
+
+  @Field((_type) => RoomEdge)
+  room: RoomEdge
 }
 
 

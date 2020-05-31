@@ -1,5 +1,4 @@
-import { Field, ID, ObjectType } from '@nestjs/graphql';
-import { toGlobalId } from 'graphql-relay';
+import { Field, ObjectType } from '@nestjs/graphql';
 import { Node } from 'Node/models/node.models';
 import { User } from 'User/models/user.models';
 
@@ -10,6 +9,9 @@ export class Room implements Node {
 
   readonly updatedAt: Date;
 
+  @Field({ name: 'id'})
+  relayId: string
+  
   @Field()
   _id: string;
 

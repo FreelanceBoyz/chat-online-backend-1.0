@@ -1,33 +1,29 @@
 import { HttpException, HttpStatus, UseGuards } from '@nestjs/common';
-import { Query, Resolver, Mutation, Args, Context } from '@nestjs/graphql';
-
+import { Query, Resolver, Mutation, Args, Context, ResolveField, Parent } from '@nestjs/graphql';
+import { PubSub } from 'graphql-subscriptions';
+import { toGlobalId } from 'graphql-relay';
 import { RoomService } from 'Room/room.service';
 import { Room } from 'Room/models/room.models';
-import { RoomsConnection } from 'Room/graphql-types/room.graphql';
-import { BasicResponse } from 'common/common-models';
+import { CreatedConnectionPayload, RoomList, RoomsConnection } from 'Room/graphql-types/room.graphql';
 import { GqlAuthGuard } from 'Graphql/graphql.guard';
 import { UserService } from 'User/user.service';
 import { Types } from 'mongoose';
 
-@Resolver(() => Room)
-export class RoomResolvers {
+@Resolver(() => RoomList)
+export class RoomListResolvers {
   constructor(private readonly roomService: RoomService, private readonly userService: UserService) {}
 
-  @UseGuards(GqlAuthGuard)
-  @Query(_returns => RoomsConnection)
-  async RoomGraphGetAllRoom(@Context() context, @Args('first') count: number, @Args('after') cursor: string ) {
+  @ResolveField(type => RoomsConnection)
+  async allRooms(@Parent() myRoomList: RoomList, @Args('first') count: number, @Args('after') cursor: string ) {
     try {
-      const { user: { _id } } = context.req;
-      const currentUser = await this.userService.findUserById(_id, { rooms: 1 });
-      let rooms = currentUser.rooms as [any];
       let indexOfRoom = -1;
+      let { roomsConection } = myRoomList;
       if (cursor) {
-        const cursorRoom = rooms.find((room) => room.toHexString() === cursor);
-        indexOfRoom  = rooms.indexOf(cursorRoom);
+        const cursorRoom = roomsConection.find((room) => room === cursor);
+        indexOfRoom  = roomsConection.indexOf(cursorRoom);
       }
-      rooms = rooms.slice(indexOfRoom + 1, indexOfRoom + 1 + count) as [any];
-      
-      const roomsData = await Promise.all(rooms.map((roomId) => this.roomService.findRoomById(roomId.toHexString())));
+      roomsConection = roomsConection.slice(indexOfRoom + 1, indexOfRoom + 1 + count) as [any];
+      const roomsData = await Promise.all(roomsConection.map((roomId) => this.roomService.findRoomById(roomId)));
       const edges = (await Promise.all(roomsData.map(async (room) => {
         const lastMessage = '';
         if (room.messages?.length) {
@@ -44,6 +40,7 @@ export class RoomResolvers {
         return {
           node: {
             _id: Types.ObjectId(room._id),
+            relayId: toGlobalId("Room", room._id),
             title: room.title,
             users: usersData,
             lastMessage,
@@ -60,7 +57,33 @@ export class RoomResolvers {
         edges,
         statusCode: 200,
       };
+    } catch(e) {
+      console.log(e);
+      throw new HttpException(
+        {
+          error: 'Some thing went wrong',
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+}
+@Resolver(() => Room)
+export class RoomResolvers {
+  constructor(private readonly roomService: RoomService, private readonly userService: UserService) {}
 
+  @UseGuards(GqlAuthGuard)
+  @Query(_returns => RoomList)
+  async RoomGraphGetAllRoom(@Context() context){
+    try {
+      const { user: { _id } } = context.req;
+      const currentUser = await this.userService.findUserById(_id, { rooms: 1 });
+      const rooms = currentUser.rooms as [any];
+
+      return {
+        roomsConection: rooms
+      }
     } catch (e) {
       console.log(e);
       throw new HttpException(
@@ -74,11 +97,11 @@ export class RoomResolvers {
   }
 
   @UseGuards(GqlAuthGuard)
-  @Mutation(_returns => BasicResponse)
+  @Mutation(_returns => CreatedConnectionPayload)
   async RoomGraphCreateRoom(@Context() context,  @Args('email') email: string) {
     const { user: { _id } } = context.req;
-    const currentUser = await this.userService.findUserById(_id, { rooms: 1 });
-    const addedUser = await this.userService.findUserByEmail(email, { rooms: 1 });
+    const currentUser = await this.userService.findUserById(_id);
+    const addedUser = await this.userService.findUserByEmail(email);
     if (addedUser) {
       if (_id.toString() === addedUser._id.toString()) {
         throw new HttpException({
@@ -102,8 +125,20 @@ export class RoomResolvers {
       await this.userService.updateRoomsOfUser(_id, [...currentUser.rooms, newRoom._id]);
       await this.userService.updateRoomsOfUser(addedUser._id, [...addedUser.rooms, newRoom._id]);
       return {
-        message: 'create room success',
-        statusCode: 200,
+        room: {
+          cursor: newRoom._id,
+          node: {
+            _id: newRoom._id,
+            relayId: toGlobalId("Room", newRoom._id),
+            title: newRoom.title,
+            lastMessage: '',
+            users: [currentUser, addedUser],
+          },
+        },
+        basicResponse: {
+          message: 'create room success',
+          statusCode: 200,
+        }
       }
     } else {
       throw new HttpException({

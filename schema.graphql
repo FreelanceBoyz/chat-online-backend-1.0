@@ -4,6 +4,7 @@
 
 type User implements Node {
   _id: String!
+  id: String!
   name: String!
   email: String!
   phone: String!
@@ -11,6 +12,7 @@ type User implements Node {
 
 interface Node {
   _id: String!
+  id: String!
 }
 
 type UserPayload {
@@ -21,6 +23,7 @@ type UserPayload {
 
 type Room implements Node {
   _id: String!
+  id: String!
   title: String!
   users: [User!]!
   lastMessage: String!
@@ -28,6 +31,7 @@ type Room implements Node {
 
 type Chat implements Node {
   _id: String!
+  id: String!
   message: String!
   ownerName: String!
   roomId: String!
@@ -56,16 +60,26 @@ type RoomEdge {
   cursor: String!
 }
 
+type RoomList {
+  roomsConection: [String!]!
+  allRooms(after: String!, first: Float!): RoomsConnection!
+}
+
+type CreatedConnectionPayload {
+  basicResponse: BasicResponse!
+  room: RoomEdge!
+}
+
 type Query {
   UserGraphGetInfo: User!
   UserGraphVerifyToken: UserPayload!
-  RoomGraphGetAllRoom(after: String!, first: Float!): RoomsConnection!
+  RoomGraphGetAllRoom: RoomList!
 }
 
 type Mutation {
   UserGraphSignUp(input: CreateUserInput!): UserPayload!
   UserGraphSignIn(input: SignInUserInput!): UserPayload!
-  RoomGraphCreateRoom(email: String!): BasicResponse!
+  RoomGraphCreateRoom(email: String!): CreatedConnectionPayload!
 }
 
 input CreateUserInput {

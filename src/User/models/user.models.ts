@@ -11,6 +11,9 @@ export class User implements Node {
 
   readonly updatedAt: Date;
 
+  @Field({ name: 'id'})
+  relayId: string
+
   @Field()
   name: string;
 

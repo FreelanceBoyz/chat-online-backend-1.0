@@ -36,6 +36,7 @@
     "bcrypt": "^4.0.1",
     "graphql": "^15.0.0",
     "graphql-relay": "^0.6.0",
+    "graphql-subscriptions": "^1.1.0",
     "mongoose": "^5.9.14",
     "nestjs-graphql-relay": "^0.0.2",
     "reflect-metadata": "^0.1.13",

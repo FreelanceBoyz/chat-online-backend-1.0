@@ -129,12 +129,8 @@ export class UserResolvers {
 
   @Mutation(() => UserPayload)
   async UserGraphSignInWithGoogle(@Args('input') googleSigninInput: GoogleSigninInput) {
-    console.log('This');
     const user = await this.userService.findUserByEmail(googleSigninInput.email);
-    console.log('That');
     if (user) {
-      console.log('This Id');
-      console.log(user._id);
       const { token, refreshToken } = this.userService.getAuthToken({_id: user._id});
       return {
         user,
@@ -152,8 +148,6 @@ export class UserResolvers {
       };
       const createdUser = await this.userService.createUser(newUser);
       if (createdUser) {
-        console.log("User ID");
-        console.log(createdUser._id);
         const { token, refreshToken } = this.userService.getAuthToken({_id: createdUser._id });
         return {
           user: createdUser,

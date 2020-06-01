@@ -29,6 +29,10 @@ export class RoomService {
     )
   }
 
+  public async getMessageWithId(_id, projection?) {
+    return this.chatModel.findOne({ _id }, projection);
+  }
+
   public async addMessage(newMessage) {
     return this.chatModel.create(newMessage);
   }

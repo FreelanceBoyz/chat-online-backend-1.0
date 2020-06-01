@@ -5,7 +5,7 @@ import { toGlobalId } from 'graphql-relay';
 import { RoomService } from 'Room/room.service';
 import { Room } from 'Room/models/room.models';
 import { Chat } from 'Room/models/chat.models';
-import { CreatedConnectionPayload, RoomList, RoomsConnection } from 'Room/graphql-types/room.graphql';
+import { CreatedConnectionPayload, RoomList, RoomsConnection, ChatConnection, ChatList } from 'Room/graphql-types/room.graphql';
 import { GqlAuthGuard } from 'Graphql/graphql.guard';
 import { UserService } from 'User/user.service';
 import { Types } from 'mongoose';
@@ -30,10 +30,11 @@ export class RoomListResolvers {
       }
       const roomsDataPaging = roomsData.slice(indexOfRoom + 1, indexOfRoom + 1 + count) as [any];
       const edges = (await Promise.all(roomsDataPaging.map(async (room) => {
-        const lastMessage = '';
+        let lastMessage = '';
         if (room.messages?.length) {
           const lastMessageId = room.messages[room.messages.length - 1];
-          //waitng for message implement
+          const lastMessageIns = await this.roomService.getMessageWithId(lastMessageId, { message: 1 });
+          lastMessage = lastMessageIns.message || '';
         }
 
         const usersData = await Promise.all(room.joinedUsers.map(async (userId) => this.userService.findUserById(userId, {
@@ -75,6 +76,60 @@ export class RoomListResolvers {
     }
   }
 }
+
+@Resolver(() => ChatList)
+export class ChatListResolvers {
+  constructor(private readonly roomService: RoomService, private readonly userService: UserService) {}
+
+  @ResolveField(type => ChatConnection)
+  async allChat(@Parent() myChatList: ChatList, @Args('last') count: number, @Args('before') cursor: string ) {
+    try {
+      const { chatConnection } = myChatList;
+      const chatDatas = await Promise.all(chatConnection.map((chatId) => this.roomService.getMessageWithId(chatId)));
+      let indexOfRoom = chatDatas.length - 1;
+      if (cursor) {
+        const cursorRoom = chatDatas.find((chat) => chat._id.toString() === cursor);
+        indexOfRoom  = chatDatas.indexOf(cursorRoom);
+      }
+      const chatDatasPaging = chatDatas.slice(indexOfRoom - count, indexOfRoom) as [any];
+      const edges = (await Promise.all(chatDatasPaging.map(async (chat) => {
+        const ownerMessage = await this.userService.findUserById(chat.ownerId, { name: 1 });
+
+        return {
+          node: {
+            _id: Types.ObjectId(chat._id),
+            relayId: toGlobalId("Chat", chat._id),
+            ownerId: chat.ownerId,
+            message: chat.message,
+            ownerName: ownerMessage.name,
+            createdAt: chat.createdAt,
+          },
+          cursor: chat._id,
+        };
+      })));
+
+      const startCursor = edges.length >= 1 ? edges[edges.length - 1].cursor : '';
+      const endCursor = edges.length >= 1 ? edges[0].cursor : '';
+
+      const hasPreviousPage = chatDatas.length && chatDatasPaging.length && chatDatas[0]._id !== chatDatasPaging[0]._id;
+      return {
+        pageInfo: {hasPreviousPage, hasNextPage: false , startCursor, endCursor},
+        edges,
+        statusCode: 200,
+      };
+    } catch(e) {
+      console.log(e);
+      throw new HttpException(
+        {
+          error: 'Some thing went wrong',
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+}
+
 @Resolver(() => Room)
 export class RoomResolvers {
   constructor(private readonly roomService: RoomService, private readonly userService: UserService) {}
@@ -94,6 +149,28 @@ export class RoomResolvers {
 
       return {
         roomsConection: rooms
+      }
+    } catch (e) {
+      console.log(e);
+      throw new HttpException(
+        {
+          error: 'Some thing went wrong',
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @UseGuards(GqlAuthGuard)
+  @Query(_returns => ChatList)
+  async RoomGraphGetAllMessage(@Context() context, @Args("roomId") roomId: string){
+    try {
+      const currentRoom = await this.roomService.findRoomById(roomId);
+      const messages = currentRoom.messages as [any];
+
+      return {
+        chatConnection: messages
       }
     } catch (e) {
       console.log(e);
@@ -165,6 +242,7 @@ export class RoomResolvers {
     try {
       const { user: { _id } } = context.req;
       const currentUser = await this.userService.findUserById(_id);
+      console.log("RoomResolvers -> RoomGraphAddNewChat -> roomId", roomId)
       const room = await this.roomService.findRoomById(roomId);
       const joinedUsers = room.joinedUsers.filter(id => id.toString() !== _id.toString());
       const newMessage = await this.roomService.addMessage({

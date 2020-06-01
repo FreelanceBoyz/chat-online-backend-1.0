@@ -11,8 +11,9 @@ import { EnvConstants } from 'common/constants/EnvConstants';
       autoSchemaFile: 'schema.graphql',
       installSubscriptionHandlers: true,
       formatError: (err) => {
+        console.log(err);
         return {
-          message: err.extensions.exception.response.error,
+          message: err?.extensions?.exception?.response?.error,
           locations: null,
           path: null,
           extensions: null

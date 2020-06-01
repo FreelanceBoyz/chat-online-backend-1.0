@@ -33,6 +33,35 @@ export class RoomList {
   allRooms: RoomsConnection
 }
 
+@ObjectType({isAbstract: true})
+abstract class ChatEdge implements Relay.Edge<Chat> {
+  @Field(() => Chat)
+  readonly node!: Chat;
+
+  @Field((_type) => String)
+  readonly cursor!: Relay.ConnectionCursor;
+}
+@ObjectType()
+export class ChatConnection implements Relay.Connection<Chat> {
+  @Field()
+  readonly pageInfo!: PageInfo;
+
+  @Field(() => [ChatEdge])
+  readonly edges!: Relay.Edge<Chat>[];
+
+  @Field()
+  statusCode: number;
+}
+
+@ObjectType()
+export class ChatList {
+  @Field((_type) => [String])
+  chatConnection: [string]
+
+  @Field((_type) => ChatConnection, { name: "allChat" })
+  allChat: ChatConnection
+}
+
 @ObjectType()
 export class CreatedConnectionPayload {
   @Field((_type) => BasicResponse)

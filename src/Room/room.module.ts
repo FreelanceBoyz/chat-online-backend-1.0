@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from "@nestjs/mongoose";
-import { RoomResolvers, RoomListResolvers } from './room.resolver';
+import { RoomResolvers, RoomListResolvers, ChatListResolvers } from './room.resolver';
 import { RoomService } from './room.service';
 import { GraphqlModule } from 'Graphql/graphql.module';
 import { JwtModule } from "@nestjs/jwt";
@@ -31,7 +31,7 @@ import { UserModule } from 'User/user.module';
     GraphqlModule,
     UserModule,
   ],
-  providers: [RoomService, RoomResolvers, RoomListResolvers, GqlAuthGuard],
+  providers: [RoomService, RoomResolvers, RoomListResolvers, ChatListResolvers, GqlAuthGuard],
   exports: [RoomService]
 })
 export class RoomModule {}

@@ -10,6 +10,9 @@ import { EnvConstants } from 'common/constants/EnvConstants';
     GraphQLModule.forRoot({
       autoSchemaFile: 'schema.graphql',
       installSubscriptionHandlers: true,
+      subscriptions: {
+        keepAlive: 10000,
+      },
       formatError: (err) => {
         console.log(err);
         return {

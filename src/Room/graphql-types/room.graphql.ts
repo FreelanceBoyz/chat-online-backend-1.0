@@ -34,7 +34,7 @@ export class RoomList {
 }
 
 @ObjectType({isAbstract: true})
-abstract class ChatEdge implements Relay.Edge<Chat> {
+export abstract class ChatEdge implements Relay.Edge<Chat> {
   @Field(() => Chat)
   readonly node!: Chat;
 

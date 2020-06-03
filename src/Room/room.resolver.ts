@@ -4,8 +4,7 @@ import { PubSub } from 'graphql-subscriptions';
 import { toGlobalId } from 'graphql-relay';
 import { RoomService } from 'Room/room.service';
 import { Room } from 'Room/models/room.models';
-import { Chat } from 'Room/models/chat.models';
-import { CreatedConnectionPayload, RoomList, RoomsConnection, ChatConnection, ChatList } from 'Room/graphql-types/room.graphql';
+import { CreatedConnectionPayload, RoomList, RoomsConnection, ChatConnection, ChatList, ChatEdge } from 'Room/graphql-types/room.graphql';
 import { GqlAuthGuard } from 'Graphql/graphql.guard';
 import { UserService } from 'User/user.service';
 import { Types } from 'mongoose';
@@ -89,9 +88,9 @@ export class ChatListResolvers {
       let indexOfRoom = chatDatas.length - 1;
       if (cursor) {
         const cursorRoom = chatDatas.find((chat) => chat._id.toString() === cursor);
-        indexOfRoom  = chatDatas.indexOf(cursorRoom);
+        indexOfRoom  = chatDatas.indexOf(cursorRoom) - 1;
       }
-      const chatDatasPaging = chatDatas.slice(indexOfRoom - count, indexOfRoom) as [any];
+      const chatDatasPaging = chatDatas.slice(indexOfRoom - count + 1, indexOfRoom + 1) as [any];
       const edges = (await Promise.all(chatDatasPaging.map(async (chat) => {
         const ownerMessage = await this.userService.findUserById(chat.ownerId, { name: 1 });
 
@@ -108,8 +107,8 @@ export class ChatListResolvers {
         };
       })));
 
-      const startCursor = edges.length >= 1 ? edges[edges.length - 1].cursor : '';
-      const endCursor = edges.length >= 1 ? edges[0].cursor : '';
+      const startCursor= edges.length >= 1 ? edges[0].cursor : '';
+      const endCursor = edges.length >= 1 ? edges[edges.length - 1].cursor : '';
 
       const hasPreviousPage = chatDatas.length && chatDatasPaging.length && chatDatas[0]._id !== chatDatasPaging[0]._id;
       return {
@@ -134,8 +133,8 @@ export class ChatListResolvers {
 export class RoomResolvers {
   constructor(private readonly roomService: RoomService, private readonly userService: UserService) {}
 
-  @Subscription(_returns => Chat, { name: 'chatAdded', filter: (payload, variables) => payload.chatAdded.receiverId === variables.id })
-  addNewChatHandler() {
+  @Subscription(_returns => ChatEdge, { name: 'chatAdded', filter: (payload, variables) => payload.chatAdded.receiverId === variables.roomId })
+  addNewChatHandler(@Args('roomId') roomId: String) {
     return pubSub.asyncIterator('chatAdded');
   }
 
@@ -242,19 +241,24 @@ export class RoomResolvers {
     try {
       const { user: { _id } } = context.req;
       const currentUser = await this.userService.findUserById(_id);
-      console.log("RoomResolvers -> RoomGraphAddNewChat -> roomId", roomId)
       const room = await this.roomService.findRoomById(roomId);
-      const joinedUsers = room.joinedUsers.filter(id => id.toString() !== _id.toString());
       const newMessage = await this.roomService.addMessage({
         message,
         ownerId: _id,
       });
       await this.roomService.updateMessagesInRoom(roomId, [...room.messages, newMessage._id]);
-      joinedUsers.forEach((id) => pubSub.publish('chatAdded', { chatAdded: {
-        message,
-        ownerName: currentUser.name,
-        receiverId: id,
-      }}));
+      pubSub.publish('chatAdded', { chatAdded: {
+        node: {
+          _id: Types.ObjectId(newMessage._id),
+          relayId: toGlobalId("Chat", newMessage._id),
+          ownerId: _id,
+          message: message,
+          ownerName: currentUser.name,
+          createdAt: newMessage.createdAt,
+        },
+        cursor: newMessage._id,
+        receiverId: roomId,
+      }})
       return {
         message: 'success add message',
         statusCode: 200,

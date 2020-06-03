@@ -16,6 +16,7 @@ import {
 } from 'User/graphql-types/user.graphql';
 import { GqlAuthGuard } from 'Graphql/graphql.guard';
 import { MailerService } from '@nestjs-modules/mailer';
+import { BasicResponse } from 'common/common-models';
 
 @Resolver(() => User)
 export class UserResolvers {
@@ -56,7 +57,7 @@ export class UserResolvers {
     };
   }
 
-  @Mutation(() => UserPayload)
+  @Mutation(() => BasicResponse)
   async UserGraphSignUp(@Args('input') createUserData: CreateUserInput) {
     const user = await this.userService.findUserByEmail(createUserData.email, {
       _id: 1,
@@ -82,6 +83,11 @@ export class UserResolvers {
       subject: 'Confirm Your Email - Chat Application',  
       html: 'Hello,\n\n' + 'Please verify your account by clicking the link: \nhttp:\/\/' + 'localhost:3000' + '\/confirmation\?token=' + emailVerifyToken.token + '.\n', 
     });
+
+    return {
+      message: 'success',
+      statusCode: 200,
+    }
   }
 
   @Mutation(() => UserPayload)

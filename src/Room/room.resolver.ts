@@ -90,7 +90,7 @@ export class ChatListResolvers {
         const cursorRoom = chatDatas.find((chat) => chat._id.toString() === cursor);
         indexOfRoom  = chatDatas.indexOf(cursorRoom) - 1;
       }
-      const chatDatasPaging = chatDatas.slice(indexOfRoom - count + 1, indexOfRoom + 1) as [any];
+      const chatDatasPaging = chatDatas.slice(indexOfRoom - count + 1 < 0 ? 0 : indexOfRoom - count + 1, indexOfRoom + 1) as [any];
       const edges = (await Promise.all(chatDatasPaging.map(async (chat) => {
         const ownerMessage = await this.userService.findUserById(chat.ownerId, { name: 1 });
 

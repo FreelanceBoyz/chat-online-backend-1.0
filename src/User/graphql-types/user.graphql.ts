@@ -32,6 +32,14 @@ export class SignInUserInput {
 }
 
 @InputType()
+export class ResetPasswordInput {
+  @Field()
+  token: string;
+  @Field()
+  password: string;
+}
+
+@InputType()
 export class GoogleSigninInput {
   @Field()
   email: string;

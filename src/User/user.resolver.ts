@@ -12,7 +12,8 @@ import {
   UserPayload,
   CreateUserInput,
   SignInUserInput,
-  GoogleSigninInput
+  GoogleSigninInput,
+  ResetPasswordInput
 } from 'User/graphql-types/user.graphql';
 import { GqlAuthGuard } from 'Graphql/graphql.guard';
 import { MailerService } from '@nestjs-modules/mailer';
@@ -193,6 +194,70 @@ export class UserResolvers {
           isVerified: false,
         }
       }
+    }
+  }
+
+  @Mutation(() => BasicResponse)
+  async UserGraphSendMailResetPassword(@Args('email') email: string) {
+    const user = await this.userService.findUserByEmail(email);
+    if (user) {
+      if (user.password === null) {
+        return {
+          message: 'This account is signed with Google',
+          statusCode: 404
+        }
+      }
+      const userId = user._id.toString();
+      const verifyToken = await this.emailVerifyTokenService.create(userId);
+      this.mailService.sendMail({
+        to: user.email,
+        from: 'no-reply@chatapplication', 
+        subject: 'Reset your password - Chat Application',  
+        html: 'Hello,\n\n' + 'Click this link to reset your password: \nhttp:\/\/' + 'localhost:3000' + '\/resetpassword\?token=' + verifyToken.token + '.\n',
+      });
+      return {
+        message: 'Check your email to reset your password.',
+        statusCode: 200
+      }
+    }
+    else {
+      return {
+        message: 'This email is not existed',
+        statusCode: 404
+      }
+    }
+  }
+
+  @Mutation(() => BasicResponse)
+  async UserGraphResetPassword(@Args('input') resetPasswordInput: ResetPasswordInput) {
+    const savedToken = await this.emailVerifyTokenService.findOne(resetPasswordInput.token);
+    if (savedToken) {
+      const updatedUser = await this.userService.updatePassword(savedToken.userId, resetPasswordInput.password);
+      if (updatedUser) {
+        await this.emailVerifyTokenService.delete(savedToken._id);
+        return {
+          message: 'Password is changed successfully',
+          statusCode: 201
+        }
+      }
+      else {
+        throw new HttpException(
+          {
+            error: 'Error when update user password',
+            statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          },
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+    }
+    else {
+      throw new HttpException(
+        {
+          error: 'Error when finding this user',
+          statusCode: HttpStatus.NOT_FOUND,
+        },
+        HttpStatus.NOT_FOUND,
+      );
     }
   }
 }

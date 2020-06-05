@@ -27,7 +27,6 @@ export class UserService {
     } catch (err) {
       console.log(err);
     }
-    return this.userModel.create(newUser);
   }
 
   public findUserByEmail(userEmail: string, projection?): Promise<User> {
@@ -67,7 +66,17 @@ export class UserService {
   }
   public async updateVerifyMail(id: string, isVerified: boolean): Promise<User> {
     return await this.userModel.findByIdAndUpdate(id, {isVerified: isVerified});
-  } 
+  }
+  
+  public async updatePassword(id: string, newPassword: string) {
+    try {
+      newPassword = await Utils.hashPassword(newPassword);
+      return await this.userModel.findByIdAndUpdate(id, {password: newPassword});
+    }
+    catch (error) {
+      console.log(error);
+    }
+  }
 
   findAll(): string {
     // const parsedUserId = Relay.fromGlobalId(where.id);

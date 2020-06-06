@@ -12,7 +12,7 @@ import {
   UserPayload,
   CreateUserInput,
   SignInUserInput,
-  GoogleSigninInput,
+  SigninWithInput,
   ResetPasswordInput
 } from 'User/graphql-types/user.graphql';
 import { GqlAuthGuard } from 'Graphql/graphql.guard';
@@ -66,7 +66,7 @@ export class UserResolvers {
     if (user) {
       throw new HttpException(
         {
-          error: 'This email already exists',
+          error: 'This email is already existed',
           statusCode: HttpStatus.BAD_REQUEST,
         },
         HttpStatus.BAD_REQUEST,
@@ -135,9 +135,18 @@ export class UserResolvers {
   }
 
   @Mutation(() => UserPayload)
-  async UserGraphSignInWithGoogle(@Args('input') googleSigninInput: GoogleSigninInput) {
-    const user = await this.userService.findUserByEmail(googleSigninInput.email);
+  async UserGraphSignInWith(@Args('input') signinWithInput: SigninWithInput) {
+    const user = await this.userService.findUserByEmail(signinWithInput.email);
     if (user) {
+      if (user.password) {
+        throw new HttpException(
+          {
+            error: 'This account is signed with email',
+            statusCode: HttpStatus.BAD_REQUEST,
+          },
+          HttpStatus.BAD_REQUEST,
+        );
+      }
       const { token, refreshToken } = this.userService.getAuthToken({_id: user._id});
       return {
         user,
@@ -147,8 +156,8 @@ export class UserResolvers {
     }
     else {
       const newUser = {
-        name: googleSigninInput.name,
-        email: googleSigninInput.email,
+        name: signinWithInput.name,
+        email: signinWithInput.email,
         isVerified: true,
         phone: null,
         password: null

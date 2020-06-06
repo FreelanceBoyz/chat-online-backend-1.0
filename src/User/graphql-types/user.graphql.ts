@@ -40,7 +40,7 @@ export class ResetPasswordInput {
 }
 
 @InputType()
-export class GoogleSigninInput {
+export class SigninWithInput {
   @Field()
   email: string;
   @Field()

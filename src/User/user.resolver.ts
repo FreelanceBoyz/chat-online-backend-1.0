@@ -82,11 +82,17 @@ export class UserResolvers {
 
     const emailVerifyToken = await this.emailVerifyTokenService.create(userId);
 
-    this.mailService.sendMail({
+    await this.mailService.sendMail({
       to: createdUser.email,
-      from: 'no-reply@chatapplication', 
+      from: 'aae2d46691-290e27@inbox.mailtrap.io', 
       subject: 'Confirm Your Email - Chat Application',  
       html: 'Hello,\n\n' + 'Please verify your account by clicking the link: \nhttp:\/\/' + `${this.environmentService.getByKey(EnvConstants.URL_HOST)}` + '\/confirmation\?token=' + emailVerifyToken.token + '\n', 
+    }).then(res => {
+      console.log('Success');
+      console.log(res)
+    }).catch(err => {
+      console.log('Failed');
+      console.error(err);
     });
 
     return {

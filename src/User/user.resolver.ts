@@ -18,6 +18,8 @@ import {
 } from 'User/graphql-types/user.graphql';
 import { GqlAuthGuard } from 'Graphql/graphql.guard';
 import { MailerService } from '@nestjs-modules/mailer';
+import { EnvironmentService } from 'Enviroment/enviroment.service';
+import { EnvConstants } from "common/constants/EnvConstants";
 import { BasicResponse } from 'common/common-models';
 
 @Resolver(() => User)
@@ -26,6 +28,7 @@ export class UserResolvers {
     private readonly userService: UserService,
     private readonly mailService: MailerService,
     private readonly emailVerifyTokenService: EmailVerifyTokenService,
+    private readonly environmentService: EnvironmentService,
   ) {}
 
   @UseGuards(GqlAuthGuard)
@@ -83,7 +86,7 @@ export class UserResolvers {
       to: createdUser.email,
       from: 'no-reply@chatapplication', 
       subject: 'Confirm Your Email - Chat Application',  
-      html: 'Hello,\n\n' + 'Please verify your account by clicking the link: \nhttp:\/\/' + 'localhost:3000' + '\/confirmation\?token=' + emailVerifyToken.token + '.\n', 
+      html: 'Hello,\n\n' + 'Please verify your account by clicking the link: \nhttp:\/\/' + `${this.environmentService.getByKey(EnvConstants.URL_HOST)}` + '\/confirmation\?token=' + emailVerifyToken.token + '\n', 
     });
 
     return {
@@ -223,7 +226,7 @@ export class UserResolvers {
         to: user.email,
         from: 'no-reply@chatapplication', 
         subject: 'Reset your password - Chat Application',  
-        html: 'Hello,\n\n' + 'Click this link to reset your password: \nhttp:\/\/' + 'localhost:3000' + '\/resetpassword\?token=' + verifyToken.token + '.\n',
+        html: 'Hello,\n\n' + 'Click this link to reset your password: \nhttp:\/\/' + `${this.environmentService.getByKey(EnvConstants.URL_HOST)}` + '\/resetpassword\?token=' + verifyToken.token + '\n',
       });
       return {
         message: 'Check your email to reset your password.',

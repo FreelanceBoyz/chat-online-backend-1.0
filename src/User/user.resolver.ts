@@ -13,7 +13,8 @@ import {
   CreateUserInput,
   SignInUserInput,
   SigninWithInput,
-  ResetPasswordInput
+  ResetPasswordInput,
+  ChangePasswordInput
 } from 'User/graphql-types/user.graphql';
 import { GqlAuthGuard } from 'Graphql/graphql.guard';
 import { MailerService } from '@nestjs-modules/mailer';
@@ -267,6 +268,44 @@ export class UserResolvers {
         },
         HttpStatus.NOT_FOUND,
       );
+    }
+  }
+
+  @Mutation(() => BasicResponse)
+  async UserGraphChangePassword(@Args('input') changePasswordInput: ChangePasswordInput) {
+    const user = await this.userService.findUserByEmail(changePasswordInput.email);
+    if (user) {
+      const isMatch = await user.comparePassword(changePasswordInput.currentpassword);
+      if (isMatch) {
+          const updatedUser = await this.userService.updatePassword(user._id, changePasswordInput.password);
+          if (updatedUser) {
+            return {
+              message: 'Password is changed successfully',
+              statusCode: 200
+            }
+          }
+          else {
+            throw new HttpException(
+              {
+                error: 'Error when update user password',
+                statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+              },
+              HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+          }
+      }
+      else {
+        return {
+          message: 'Current password is not corrected!',
+          statusCode: 403
+        }
+      }
+    }
+    else {
+      return {
+        message: 'Email not found',
+        statusCode: 404
+      }
     }
   }
 }

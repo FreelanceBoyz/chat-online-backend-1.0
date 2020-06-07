@@ -40,6 +40,16 @@ export class ResetPasswordInput {
 }
 
 @InputType()
+export class ChangePasswordInput {
+  @Field()
+  email: string;
+  @Field()
+  currentpassword: string;
+  @Field()
+  password: string;
+}
+
+@InputType()
 export class SigninWithInput {
   @Field()
   email: string;

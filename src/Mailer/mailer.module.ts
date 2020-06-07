@@ -12,13 +12,13 @@ import { PugAdapter } from '@nestjs-modules/mailer/dist/adapters/pug.adapter';
             inject: [EnvironmentService],
             useFactory: (environmentService: EnvironmentService) => ({
                 transport: {
-                service: 'gmail',
-                port: 587,
-                secure: false,
-                auth: {
-                    user: environmentService.getByKey(EnvConstants.USER_MAILER),
-                    pass: environmentService.getByKey(EnvConstants.PASS_MAILER)
-                }
+                    service: 'gmail',
+                    port: 587,
+                    secure: false,
+                    auth: {
+                        user: environmentService.getByKey(EnvConstants.USER_MAILER),
+                        pass: environmentService.getByKey(EnvConstants.PASS_MAILER)
+                    }
                 },
                 defaults: {
                     from:'"nest-modules" <modules@nestjs.com>',

@@ -5,6 +5,7 @@ import { MongoModule } from 'Database/mongo.module';
 import { UserModule } from 'User/user.module';
 import { RoomModule } from 'Room/room.module';
 import { EnvironmentModule } from 'Enviroment/enviroment.module';
+import { AppController } from 'app.controller';
 
 @Module({
   imports: [
@@ -15,5 +16,6 @@ import { EnvironmentModule } from 'Enviroment/enviroment.module';
     RoomModule,
     MailModule
   ],
+  controllers: [AppController]
 })
 export class AppModule {}

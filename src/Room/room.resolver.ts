@@ -4,7 +4,7 @@ import { PubSub } from 'graphql-subscriptions';
 import { toGlobalId } from 'graphql-relay';
 import { RoomService } from 'Room/room.service';
 import { Room } from 'Room/models/room.models';
-import { CreatedConnectionPayload, RoomList, RoomsConnection, ChatConnection, ChatList, ChatEdge } from 'Room/graphql-types/room.graphql';
+import { CreatedConnectionPayload, RoomList, RoomsConnection, ChatConnection, ChatList, ChatEdge, RoomVideo } from 'Room/graphql-types/room.graphql';
 import { GqlAuthGuard } from 'Graphql/graphql.guard';
 import { UserService } from 'User/user.service';
 import { Types } from 'mongoose';
@@ -136,6 +136,27 @@ export class RoomResolvers {
   @Subscription(_returns => ChatEdge, { name: 'chatAdded', filter: (payload, variables) => payload.chatAdded.receiverId === variables.roomId })
   addNewChatHandler(@Args('roomId') roomId: String) {
     return pubSub.asyncIterator('chatAdded');
+  }
+
+  @Subscription(_returns => RoomVideo, { name: 'videoCall', filter: (payload, variables) => payload.videoCall.receiverId === variables.roomId })
+  videoCallHandle(@Args('roomId') roomId: String) {
+    return pubSub.asyncIterator('videoCall');
+  }
+
+  @UseGuards(GqlAuthGuard)
+  @Query(_returns => BasicResponse)
+  async RoomGraphConnectVideo(@Context() context, @Args("peerId") peerId: string,  @Args("roomId") roomId: string) {
+    const { user: { _id } } = context.req;
+    pubSub.publish('videoCall', { videoCall: {
+      peerId,
+      rejectId: _id,
+      receiverId: roomId,
+    }})
+
+    return {
+      message: 'Request connect success',
+      statusCode: 200,
+    }
   }
 
   @UseGuards(GqlAuthGuard)

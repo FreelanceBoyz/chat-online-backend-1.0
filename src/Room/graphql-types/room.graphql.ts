@@ -41,6 +41,15 @@ export abstract class ChatEdge implements Relay.Edge<Chat> {
   @Field((_type) => String)
   readonly cursor!: Relay.ConnectionCursor;
 }
+
+@ObjectType({isAbstract: true})
+export class RoomVideo {
+  @Field(() => String)
+  readonly peerId!: string;
+  @Field(() => String)
+  readonly rejectId!: string;
+}
+
 @ObjectType()
 export class ChatConnection implements Relay.Connection<Chat> {
   @Field()

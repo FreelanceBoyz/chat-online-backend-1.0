@@ -86,14 +86,8 @@ export class UserResolvers {
       to: createdUser.email,
       from: 'aae2d46691-290e27@inbox.mailtrap.io', 
       subject: 'Confirm Your Email - Chat Application',  
-      html: 'Hello,\n\n' + 'Please verify your account by clicking the link: \n\/\/' + `${this.environmentService.getByKey(EnvConstants.URL_HOST)}` + 'confirmation\?token=' + emailVerifyToken.token + '\n', 
-    }).then(res => {
-      console.log('Success');
-      console.log(res)
-    }).catch(err => {
-      console.log('Failed');
-      console.error(err);
-    });
+      html: 'Hello,\n\n' + 'Please verify your account by clicking the link: ' + `${this.environmentService.getByKey(EnvConstants.URL_HOST)}` + 'confirmation\?token=' + emailVerifyToken.token + '\n', 
+    })
 
     return {
       message: 'success',
@@ -232,7 +226,7 @@ export class UserResolvers {
         to: user.email,
         from: 'no-reply@chatapplication', 
         subject: 'Reset your password - Chat Application',  
-        html: 'Hello,\n\n' + 'Click this link to reset your password: \n\/\/' + `${this.environmentService.getByKey(EnvConstants.URL_HOST)}` + 'resetpassword\?token=' + verifyToken.token + '\n',
+        html: 'Hello,\n\n' + 'Click this link to reset your password: ' + `${this.environmentService.getByKey(EnvConstants.URL_HOST)}` + 'resetpassword\?token=' + verifyToken.token + '\n',
       });
       return {
         message: 'Check your email to reset your password.',

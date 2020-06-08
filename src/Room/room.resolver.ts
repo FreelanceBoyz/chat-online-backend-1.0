@@ -4,7 +4,7 @@ import { PubSub } from 'graphql-subscriptions';
 import { toGlobalId } from 'graphql-relay';
 import { RoomService } from 'Room/room.service';
 import { Room } from 'Room/models/room.models';
-import { CreatedConnectionPayload, RoomList, RoomsConnection, ChatConnection, ChatList, ChatEdge, RoomVideo, RoomEdge } from 'Room/graphql-types/room.graphql';
+import { CreatedConnectionPayload, RoomList, RoomsConnection, LastMessage, ChatConnection, ChatList, ChatEdge, RoomVideo, RoomEdge } from 'Room/graphql-types/room.graphql';
 import { GqlAuthGuard } from 'Graphql/graphql.guard';
 import { UserService } from 'User/user.service';
 import { Types } from 'mongoose';
@@ -139,8 +139,13 @@ export class RoomResolvers {
   }
 
   @Subscription(_returns => RoomEdge, { name: 'roomAdded', filter: (payload, variables) => payload.roomAdded.receiverId === variables.clientId })
-  addNewRoom(@Args('clientId') clientId: String) {
+  addNewRoomHandler(@Args('clientId') clientId: String) {
     return pubSub.asyncIterator('roomAdded');
+  }
+
+  @Subscription(_returns => LastMessage, { name: 'updateLastMessage', filter: (payload, variables) => payload.updateLastMessage.receiverId === variables.clientId })
+  updateLastMessageHandler(@Args('clientId') clientId: String) {
+    return pubSub.asyncIterator('updateLastMessage');
   }
 
   @Subscription(_returns => RoomVideo, { name: 'videoCall', filter: (payload, variables) => payload.videoCall.receiverId === variables.roomId })
@@ -292,6 +297,13 @@ export class RoomResolvers {
         cursor: newMessage._id,
         receiverId: roomId,
       }})
+      room.joinedUsers.forEach((id) => {
+        pubSub.publish('updateLastMessage', { updateLastMessage: {
+          lastMessage: message,
+          roomId,
+          receiverId: id.toString(),
+        }})
+      })
       return {
         message: 'success add message',
         statusCode: 200,

@@ -50,6 +50,15 @@ export class RoomVideo {
   readonly rejectId!: string;
 }
 
+
+@ObjectType({isAbstract: true})
+export class LastMessage {
+  @Field(() => String)
+  readonly lastMessage!: string;
+  @Field(() => String)
+  readonly roomId!: string;
+}
+
 @ObjectType()
 export class ChatConnection implements Relay.Connection<Chat> {
   @Field()

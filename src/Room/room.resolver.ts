@@ -4,7 +4,7 @@ import { PubSub } from 'graphql-subscriptions';
 import { toGlobalId } from 'graphql-relay';
 import { RoomService } from 'Room/room.service';
 import { Room } from 'Room/models/room.models';
-import { CreatedConnectionPayload, RoomList, RoomsConnection, ChatConnection, ChatList, ChatEdge, RoomVideo } from 'Room/graphql-types/room.graphql';
+import { CreatedConnectionPayload, RoomList, RoomsConnection, ChatConnection, ChatList, ChatEdge, RoomVideo, RoomEdge } from 'Room/graphql-types/room.graphql';
 import { GqlAuthGuard } from 'Graphql/graphql.guard';
 import { UserService } from 'User/user.service';
 import { Types } from 'mongoose';
@@ -138,6 +138,11 @@ export class RoomResolvers {
     return pubSub.asyncIterator('chatAdded');
   }
 
+  @Subscription(_returns => RoomEdge, { name: 'roomAdded', filter: (payload, variables) => payload.roomAdded.receiverId === variables.clientId })
+  addNewRoom(@Args('clientId') clientId: String) {
+    return pubSub.asyncIterator('roomAdded');
+  }
+
   @Subscription(_returns => RoomVideo, { name: 'videoCall', filter: (payload, variables) => payload.videoCall.receiverId === variables.roomId })
   videoCallHandle(@Args('roomId') roomId: String) {
     return pubSub.asyncIterator('videoCall');
@@ -232,16 +237,23 @@ export class RoomResolvers {
       });
       await this.userService.updateRoomsOfUser(_id, [...currentUser.rooms, newRoom._id]);
       await this.userService.updateRoomsOfUser(addedUser._id, [...addedUser.rooms, newRoom._id]);
+      const roomEdge = {
+        cursor: newRoom._id,
+        node: {
+          _id: newRoom._id,
+          relayId: toGlobalId("Room", newRoom._id),
+          title: newRoom.title,
+          lastMessage: '',
+          users: [currentUser, addedUser],
+        },
+      }
+      pubSub.publish('roomAdded', { roomAdded: {
+        ...roomEdge,
+        receiverId: addedUser._id.toString(),
+      }})
       return {
         room: {
-          cursor: newRoom._id,
-          node: {
-            _id: newRoom._id,
-            relayId: toGlobalId("Room", newRoom._id),
-            title: newRoom.title,
-            lastMessage: '',
-            users: [currentUser, addedUser],
-          },
+          ...roomEdge,
         },
         basicResponse: {
           message: 'create room success',

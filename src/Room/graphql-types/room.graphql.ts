@@ -5,7 +5,7 @@ import { Chat } from 'Room/models/chat.models';
 import { PageInfo, BasicResponse } from 'common/common-models';
 
 @ObjectType({isAbstract: true})
-abstract class RoomEdge implements Relay.Edge<Room> {
+export abstract class RoomEdge implements Relay.Edge<Room> {
   @Field(() => Room)
   readonly node!: Room;
 

@@ -278,6 +278,12 @@ export class UserResolvers {
   async UserGraphChangePassword(@Args('input') changePasswordInput: ChangePasswordInput) {
     const user = await this.userService.findUserByEmail(changePasswordInput.email);
     if (user) {
+      if (user.password === null) {
+        return {
+          message: 'This account is signed in with Google/ Facebook. So cannot change password',
+          statusCode: 404
+        }
+      }
       const isMatch = await user.comparePassword(changePasswordInput.currentpassword);
       if (isMatch) {
           const updatedUser = await this.userService.updatePassword(user._id, changePasswordInput.password);
